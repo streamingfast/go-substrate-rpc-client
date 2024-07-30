@@ -259,12 +259,29 @@ func (f *factory) getTypeFields(meta *types.Metadata, fields []types.Si1Field) (
 				FieldDecoder: storedFieldDecoder,
 				LookupIndex:  field.Type.Int64(),
 			})
+			if field.Type.Int64() == 4 {
+				println("")
+			}
+
 			continue
 		}
 
 		fieldTypeDef := fieldType.Def
 
+		if field.Type.Int64() == 52 {
+			println("")
+		}
+
+		if field.Type.Int64() == 65 {
+			println("")
+		}
+
 		fieldDecoder, err := f.getFieldDecoder(meta, fieldName, fieldTypeDef)
+
+		if field.Type.Int64() == 52 {
+
+			println("")
+		}
 
 		if err != nil {
 			return nil, ErrFieldDecoderRetrieval.WithMsg(fieldName).Wrap(err)
@@ -677,10 +694,27 @@ func (n *NoopDecoder) Decode(_ *scale.Decoder) (any, error) {
 // VariantDecoder holds a FieldDecoder for each variant/enum.
 type VariantDecoder struct {
 	FieldDecoderMap map[byte]FieldDecoder
+	VariantByte     byte
+}
+
+type Valuable interface {
+	ValueAt(index int) any
+}
+type VariantWTF struct {
+	Value       any
+	VariantByte byte
+}
+
+func (v VariantWTF) ValueAt(index int) any {
+	if v, ok := v.Value.(Valuable); ok {
+		return v.ValueAt(index)
+	}
+	panic("Inner value is not a Valuable")
 }
 
 func (v *VariantDecoder) Decode(decoder *scale.Decoder) (any, error) {
 	variantByte, err := decoder.ReadOneByte()
+	v.VariantByte = variantByte
 
 	if err != nil {
 		return nil, ErrVariantByteDecoding.Wrap(err)
@@ -696,7 +730,14 @@ func (v *VariantDecoder) Decode(decoder *scale.Decoder) (any, error) {
 		return variantByte, nil
 	}
 
-	return variantDecoder.Decode(decoder)
+	a, err := variantDecoder.Decode(decoder)
+	if err != nil {
+		return nil, fmt.Errorf("variant '%d': %w", variantByte, err)
+	}
+	return &VariantWTF{
+		Value:       a,
+		VariantByte: variantByte,
+	}, nil
 }
 
 // ArrayDecoder holds information about the length of the array and the FieldDecoder used for its items.
@@ -897,6 +938,10 @@ func (d DecodedField) Encode(encoder scale.Encoder) error {
 }
 
 type DecodedFields []*DecodedField
+
+func (d DecodedFields) ValueAt(index int) any {
+	return d[index].Value
+}
 
 type DecodedFieldPredicateFn func(fieldIndex int, field *DecodedField) bool
 type DecodedValueProcessingFn[T any] func(value any) (T, error)
