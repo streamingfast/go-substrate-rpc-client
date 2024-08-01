@@ -698,11 +698,19 @@ type VariantDecoder struct {
 }
 
 type Valuable interface {
+	HasValue() bool
 	ValueAt(index int) any
 }
 type VariantWTF struct {
 	Value       any
 	VariantByte byte
+}
+
+func (v VariantWTF) HasValue() bool {
+	if v, ok := v.Value.(Valuable); ok {
+		return v.HasValue()
+	}
+	panic("Inner value is not a Valuable")
 }
 
 func (v VariantWTF) ValueAt(index int) any {
@@ -941,6 +949,10 @@ type DecodedFields []*DecodedField
 
 func (d DecodedFields) ValueAt(index int) any {
 	return d[index].Value
+}
+
+func (d DecodedFields) HasValue() bool {
+	return len(d) > 0
 }
 
 type DecodedFieldPredicateFn func(fieldIndex int, field *DecodedField) bool
