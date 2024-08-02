@@ -59,7 +59,6 @@ func NewExtrinsicRetriever[
 		chainExecutor:            chainExecutor,
 		extrinsicParsingExecutor: extrinsicParsingExecutor,
 	}
-
 	if err := retriever.updateInternalState(nil); err != nil {
 		return nil, ErrInternalStateUpdate.Wrap(err)
 	}

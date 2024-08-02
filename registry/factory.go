@@ -259,29 +259,12 @@ func (f *factory) getTypeFields(meta *types.Metadata, fields []types.Si1Field) (
 				FieldDecoder: storedFieldDecoder,
 				LookupIndex:  field.Type.Int64(),
 			})
-			if field.Type.Int64() == 4 {
-				println("")
-			}
 
 			continue
 		}
 
 		fieldTypeDef := fieldType.Def
-
-		if field.Type.Int64() == 52 {
-			println("")
-		}
-
-		if field.Type.Int64() == 65 {
-			println("")
-		}
-
 		fieldDecoder, err := f.getFieldDecoder(meta, fieldName, fieldTypeDef)
-
-		if field.Type.Int64() == 52 {
-
-			println("")
-		}
 
 		if err != nil {
 			return nil, ErrFieldDecoderRetrieval.WithMsg(fieldName).Wrap(err)
