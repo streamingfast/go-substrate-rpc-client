@@ -684,19 +684,20 @@ type Valuable interface {
 	HasValue() bool
 	ValueAt(index int) any
 }
-type VariantWTF struct {
+
+type Variant struct {
 	Value       any
 	VariantByte byte
 }
 
-func (v VariantWTF) HasValue() bool {
+func (v Variant) HasValue() bool {
 	if v, ok := v.Value.(Valuable); ok {
 		return v.HasValue()
 	}
 	panic("Inner value is not a Valuable")
 }
 
-func (v VariantWTF) ValueAt(index int) any {
+func (v Variant) ValueAt(index int) any {
 	if v, ok := v.Value.(Valuable); ok {
 		return v.ValueAt(index)
 	}
@@ -725,7 +726,7 @@ func (v *VariantDecoder) Decode(decoder *scale.Decoder) (any, error) {
 	if err != nil {
 		return nil, fmt.Errorf("variant '%d': %w", variantByte, err)
 	}
-	return &VariantWTF{
+	return &Variant{
 		Value:       a,
 		VariantByte: variantByte,
 	}, nil
