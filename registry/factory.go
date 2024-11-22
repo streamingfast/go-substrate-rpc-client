@@ -87,7 +87,6 @@ func (f *factory) CreateErrorRegistry(meta *types.Metadata) (ErrorRegistry, erro
 			errorName := fmt.Sprintf("%s.%s", mod.Name, errorVariant.Name)
 
 			errorFields, err := f.getTypeFields(meta, errorVariant.Fields)
-
 			if err != nil {
 				return nil, ErrErrorFieldsRetrieval.WithMsg(errorName).Wrap(err)
 			}
@@ -142,7 +141,6 @@ func (f *factory) CreateCallRegistry(meta *types.Metadata) (CallRegistry, error)
 			callName := fmt.Sprintf("%s.%s", mod.Name, callVariant.Name)
 
 			callFields, err := f.getTypeFields(meta, callVariant.Fields)
-
 			if err != nil {
 				return nil, ErrCallFieldsRetrieval.WithMsg(callName).Wrap(err)
 			}
@@ -188,7 +186,6 @@ func (f *factory) CreateEventRegistry(meta *types.Metadata) (EventRegistry, erro
 			eventName := fmt.Sprintf("%s.%s", mod.Name, eventVariant.Name)
 
 			eventFields, err := f.getTypeFields(meta, eventVariant.Fields)
-
 			if err != nil {
 				return nil, ErrEventFieldsRetrieval.WithMsg(eventName).Wrap(err)
 			}
@@ -266,7 +263,6 @@ func (f *factory) getTypeFields(meta *types.Metadata, fields []types.Si1Field) (
 		fieldTypeDef := fieldType.Def
 
 		fieldDecoder, err := f.getFieldDecoder(meta, fieldName, fieldTypeDef)
-
 		if err != nil {
 			return nil, ErrFieldDecoderRetrieval.WithMsg(fieldName).Wrap(err)
 		}
@@ -305,7 +301,6 @@ func (f *factory) getFieldDecoder(
 		}
 
 		fields, err := f.getTypeFields(meta, typeDef.Composite.Fields)
-
 		if err != nil {
 			return nil, ErrCompositeTypeFieldsRetrieval.WithMsg(fieldName).Wrap(err)
 		}
@@ -369,7 +364,6 @@ func (f *factory) getVariantFieldDecoder(meta *types.Metadata, typeDef types.Si1
 		}
 
 		fields, err := f.getTypeFields(meta, variant.Fields)
-
 		if err != nil {
 			return nil, ErrVariantTypeFieldsRetrieval.WithMsg("variant '%d'", variant.Index).Wrap(err)
 		}
@@ -413,7 +407,6 @@ func (f *factory) getCompactFieldDecoder(meta *types.Metadata, fieldName string,
 			fieldName := fmt.Sprintf(tupleItemFieldNameFormat, i)
 
 			itemFieldDecoder, err := f.getCompactFieldDecoder(meta, fieldName, itemTypeDef.Def)
-
 			if err != nil {
 				return nil, ErrCompactTupleItemFieldDecoderRetrieval.
 					WithMsg("tuple item '%d'", item.Int64()).
@@ -445,7 +438,6 @@ func (f *factory) getCompactFieldDecoder(meta *types.Metadata, fieldName string,
 			compactFieldName := getFullFieldName(compactCompositeField, compactCompositeFieldType)
 
 			compactCompositeDecoder, err := f.getCompactFieldDecoder(meta, compactFieldName, compactCompositeFieldType.Def)
-
 			if err != nil {
 				return nil, ErrCompactCompositeFieldDecoderRetrieval.Wrap(err)
 			}
@@ -467,7 +459,6 @@ func (f *factory) getCompactFieldDecoder(meta *types.Metadata, fieldName string,
 // nolint:lll
 func (f *factory) getArrayFieldDecoder(arrayLen uint, meta *types.Metadata, fieldName string, typeDef types.Si1TypeDef) (FieldDecoder, error) {
 	itemFieldDecoder, err := f.getFieldDecoder(meta, fieldName, typeDef)
-
 	if err != nil {
 		return nil, ErrArrayItemFieldDecoderRetrieval.Wrap(err)
 	}
@@ -482,7 +473,6 @@ func (f *factory) getSliceFieldDecoder(
 	typeDef types.Si1TypeDef,
 ) (FieldDecoder, error) {
 	itemFieldDecoder, err := f.getFieldDecoder(meta, fieldName, typeDef)
-
 	if err != nil {
 		return nil, ErrSliceItemFieldDecoderRetrieval.Wrap(err)
 	}
@@ -510,7 +500,6 @@ func (f *factory) getTupleFieldDecoder(
 		tupleFieldName := fmt.Sprintf(tupleItemFieldNameFormat, i)
 
 		itemFieldDecoder, err := f.getFieldDecoder(meta, tupleFieldName, itemTypeDef.Def)
-
 		if err != nil {
 			return nil, ErrTupleItemFieldDecoderRetrieval.Wrap(err)
 		}
@@ -547,7 +536,6 @@ func (f *factory) getBitSequenceDecoder(
 	}
 
 	bitOrder, err := types.NewBitOrderFromString(getBitOrderString(bitOrderType.Path))
-
 	if err != nil {
 		return nil, ErrBitOrderCreation.Wrap(err)
 	}
@@ -685,19 +673,19 @@ type Valuable interface {
 	HasValue() bool
 	ValueAt(index int) any
 }
-type VariantWTF struct {
+type Variant struct {
 	Value       any
 	VariantByte byte
 }
 
-func (v VariantWTF) HasValue() bool {
+func (v Variant) HasValue() bool {
 	if v, ok := v.Value.(Valuable); ok {
 		return v.HasValue()
 	}
 	panic("Inner value is not a Valuable")
 }
 
-func (v VariantWTF) ValueAt(index int) any {
+func (v Variant) ValueAt(index int) any {
 	if v, ok := v.Value.(Valuable); ok {
 		return v.ValueAt(index)
 	}
@@ -726,7 +714,7 @@ func (v *VariantDecoder) Decode(decoder *scale.Decoder) (any, error) {
 	if err != nil {
 		return nil, fmt.Errorf("variant '%d': %w", variantByte, err)
 	}
-	return &VariantWTF{
+	return &Variant{
 		Value:       a,
 		VariantByte: variantByte,
 	}, nil
@@ -747,7 +735,6 @@ func (a *ArrayDecoder) Decode(decoder *scale.Decoder) (any, error) {
 
 	for i := uint(0); i < a.Length; i++ {
 		item, err := a.ItemDecoder.Decode(decoder)
-
 		if err != nil {
 			return nil, ErrArrayItemDecoding.Wrap(err)
 		}
@@ -769,7 +756,6 @@ func (s *SliceDecoder) Decode(decoder *scale.Decoder) (any, error) {
 	}
 
 	sliceLen, err := decoder.DecodeUintCompact()
-
 	if err != nil {
 		return nil, ErrSliceLengthDecoding.Wrap(err)
 	}
@@ -778,7 +764,6 @@ func (s *SliceDecoder) Decode(decoder *scale.Decoder) (any, error) {
 
 	for i := uint64(0); i < sliceLen.Uint64(); i++ {
 		item, err := s.ItemDecoder.Decode(decoder)
-
 		if err != nil {
 			return nil, ErrSliceItemDecoding.Wrap(err)
 		}
@@ -800,7 +785,6 @@ func (e *CompositeDecoder) Decode(decoder *scale.Decoder) (any, error) {
 
 	for _, field := range e.Fields {
 		value, err := field.FieldDecoder.Decode(decoder)
-
 		if err != nil {
 			return nil, ErrCompositeFieldDecoding.Wrap(err)
 		}
@@ -874,7 +858,6 @@ func (t *TypeDecoder) Decode(decoder *scale.Decoder) (DecodedFields, error) {
 
 	for _, field := range t.Fields {
 		decodedField, err := field.Decode(decoder)
-
 		if err != nil {
 			return nil, ErrTypeFieldDecoding.Wrap(err)
 		}
@@ -902,7 +885,6 @@ func (f *Field) Decode(decoder *scale.Decoder) (*DecodedField, error) {
 	}
 
 	value, err := f.FieldDecoder.Decode(decoder)
-
 	if err != nil {
 		return nil, err
 	}
@@ -939,8 +921,10 @@ func (d DecodedFields) HasValue() bool {
 	return len(d) > 0
 }
 
-type DecodedFieldPredicateFn func(fieldIndex int, field *DecodedField) bool
-type DecodedValueProcessingFn[T any] func(value any) (T, error)
+type (
+	DecodedFieldPredicateFn         func(fieldIndex int, field *DecodedField) bool
+	DecodedValueProcessingFn[T any] func(value any) (T, error)
+)
 
 // ProcessDecodedFieldValue applies the processing func to the value of the field
 // that matches the provided predicate func.
@@ -957,7 +941,6 @@ func ProcessDecodedFieldValue[T any](
 		}
 
 		res, err := valueProcessingFn(decodedField.Value)
-
 		if err != nil {
 			return t, ErrDecodedFieldValueProcessingError.Wrap(err)
 		}
@@ -1008,7 +991,6 @@ func GetDecodedFieldAsSliceOfType[T any](
 			}
 
 			res, err := convertSliceToType[T](v)
-
 			if err != nil {
 				return nil, ErrDecodedFieldValueTypeMismatch.Wrap(err)
 			}
